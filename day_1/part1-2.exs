@@ -3,7 +3,7 @@
 # reduce the stream of frequencies into a set of frequencies seen before
 # halt on a duplicate and return it
 reduce_until_duplicate = fn x, {acc_freq, acc_map} ->
-    IO.inspect x
+    # IO.inspect x
     acc_freq = acc_freq + x
     if MapSet.member?(acc_map, acc_freq) do
         {:halt, acc_freq}
