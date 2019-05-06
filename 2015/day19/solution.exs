@@ -38,13 +38,6 @@ result = Enum.reduce(0..(length(input)-1), MapSet.new(),
 
 IO.inspect(MapSet.size(result))
 
-
-
-input2 = [:A, :Lp, :A, :A, :A, :A, :Lp, :A, :A, :A, :A, :Rp, :A, :Lp, :A, :Lp, :A, :Rp, :A, :Lp, :A, :A, :Rp, :A, :A, :A, :A, :A, :A, :_, :A, :A, :Rp, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :Lp, :A, :A, :A, :A, :Lp, :A, :Rp, :Rp, :A, :A, :A, :A, :A, :A, :A, :A, :Lp, :A, :Rp, :A, :A, :A, :A, :A, :Lp, :A, :Rp, :A, :A, :A, :A, :Lp, :A, :Rp, :A, :A, :A, :Lp, :A, :A, :Lp, :A, :Rp, :A, :A, :_, :A, :A, :Rp, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :Lp, :A, :Rp, :A, :A, :A, :A, :Lp, :A, :A, :Rp, :A, :A, :Lp, :A, :Lp, :A, :Rp, :Lp, :A, :Lp, :A, :A, :Rp, :A, :A, :Rp, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :Lp, :A, :Rp, :A, :A, :A, :A, :A, :A, :Rp, :A, :A, :A, :A, :A, :A, :A, :A, :Lp, :A, :Rp, :A, :A, :A, :A, :Rp, :A, :A, :A, :A, :A, :A, :Lp, :A, :A, :_, :A, :A, :Lp, :A, :_, :A, :Rp, :A, :Rp, :A, :A, :Lp, :A, :_, :A, :Rp, :A, :A, :Lp, :A, :A, :A, :Rp, :A, :A, :A, :Lp, :A, :Rp, :A, :A, :Lp, :A, :Rp, :A, :Lp, :A, :Lp, :A, :_, :A, :Rp, :A, :A, :Lp, :A, :A, :Rp, :A, :A, :Lp, :A, :A, :Rp, :A, :A, :A, :A, :A, :A, :A, :Rp, :A, :Lp, :A, :Rp, :A, :Lp, :A, :Rp, :A, :A, :A, :A, :A, :A, :A, :A, :Lp, :A, :A, :A, :_, :A, :Rp, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :A, :Lp, :A, :Rp, :A, :A]
-
-IO.inspect(Enum.reduce(input2, MapSet.new(), fn(x, acc) -> MapSet.put(acc, x) end))
-
-
 # part 2
 # no need for code;
 # observe that there are only two distinct forms of the production rule
