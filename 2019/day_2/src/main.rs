@@ -5,16 +5,21 @@ fn main() {
                                 .map(|s| s.parse::<i32>().unwrap())
                                 .collect();
 
-    memory[1] = 12;
-    memory[2] = 2;
+    print!("part1 = {}", run(12,2, &mut memory));
+}
+
+fn run(noun: i32, verb: i32, memory: &mut Vec<i32>) -> i32 {
+    memory[1] = noun;
+    memory[2] = verb;
 
     let mut pc :usize = 0;
-    while handle_op(pc, &mut memory) {
+    while handle_op(pc, memory) {
         pc = pc + 4;
     }
 
-    print!("{}", memory[0]);
+    memory[0]
 }
+
 
 fn handle_op(pc: usize, memory: &mut Vec<i32>) -> bool {
     match memory[pc] {
