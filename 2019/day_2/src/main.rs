@@ -1,11 +1,20 @@
 fn main() {
-    let mut memory: Vec<i32> = include_str!("input.txt")
+    let initial_memory: Vec<i32> = include_str!("input.txt")
                                 .trim()
                                 .split(",")
                                 .map(|s| s.parse::<i32>().unwrap())
                                 .collect();
 
-    print!("part1 = {}", run(12,2, &mut memory));
+    println!("part1 = {}", run(12,2, &mut initial_memory.clone()));
+
+    for noun in 1..100 {
+        for verb in 1..100 {
+            if run(noun, verb, &mut initial_memory.clone()) == 19690720 {
+                println!("part2 = {}", 100*noun+verb);
+                return;
+            }
+        }
+    }
 }
 
 fn run(noun: i32, verb: i32, memory: &mut Vec<i32>) -> i32 {
