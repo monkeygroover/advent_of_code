@@ -1,21 +1,20 @@
-#! /usr/bin/env elixir
+#!/usr/bin/env elixir
+split_digits = fn x -> x |> Integer.to_charlist() |> Enum.chunk_every(1) end
 
-split_digits_into_chunks = fn x ->
-  x |> Integer.to_charlist()
-  |> Enum.chunk_every(1)
-  |> Enum.chunk_every(2, 1, :discard)
+is_monotonic? = fn digits ->
+  digits |> Enum.chunk_every(2, 1, :discard)
+  |> Enum.all?(fn [a, b] -> a <= b end)
 end
 
-has_repeat? = fn list_of_chunks ->
-  Enum.any?(list_of_chunks, fn [a, b] -> a == b end)
+run_lengths = fn digits ->
+  Enum.chunk_by(digits, &(&1))
+  |> Enum.map(fn digits_group -> length(digits_group) end)
 end
 
-is_monotonic? = fn list_of_chunks ->
-  Enum.all?(list_of_chunks, fn [a, b] -> a <= b end)
-end
+run_lengths = 138307..654504
+|> Enum.map(split_digits)
+|> Enum.filter(fn x -> is_monotonic?.(x) end)
+|> Enum.map(run_lengths)
 
-138307..654504
-|> Enum.map(split_digits_into_chunks)
-|> Enum.filter(fn x -> has_repeat?.(x) && is_monotonic?.(x) end)
-|> Enum.count()
-|> IO.inspect()
+run_lengths |> Enum.filter(fn x -> Enum.any?(x, &(&1 >= 2)) end) |> Enum.count() |> IO.inspect()
+run_lengths |> Enum.filter(fn x -> Enum.any?(x, &(&1 == 2)) end) |> Enum.count() |> IO.inspect()
