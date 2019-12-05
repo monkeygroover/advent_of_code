@@ -1,22 +1,20 @@
 static INPUT: i32 = 5;
 
 fn main() {
-    let initial_memory: Vec<i32> = include_str!("input.txt")
+    let mut initial_memory: Vec<i32> = include_str!("input.txt")
                                 .trim()
                                 .split(",")
                                 .map(|s| s.parse::<i32>().unwrap())
                                 .collect();
 
-    run(&mut initial_memory.clone());
+    run(&mut initial_memory);
 }
 
-fn run(memory: &mut Vec<i32>) -> i32 {
+fn run(memory: &mut Vec<i32>) -> () {
     let mut pc :usize = 0;
     while let Some(new_pc) = handle_op(pc, memory) {
         pc = new_pc;
     }
-
-    memory[0]
 }
 
 fn handle_op(pc: usize, memory: &mut Vec<i32>) -> Option<usize> {
