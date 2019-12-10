@@ -29,22 +29,22 @@ enum Direction {
 #[derive(Eq, PartialEq, Debug, Copy, Clone, Hash)]
 struct Vector {
     direction: Direction,
-    length: isize
+    length: isize  // Manhatten distance will be fine, it's all relative
 }
 
 impl Vector {
     fn new(a: Coord, b: Coord) -> Vector {
         let numerator = b.y - a.y;
         let denominator = b.x - a.x;
-        let delta_x = b.x as f64 - a.x as f64;
-        let delta_y = b.y as f64 - a.y as f64;
+        let delta_x = b.x - a.x;
+        let delta_y = b.y - a.y;
         Vector {
             direction: if denominator == 0 {
                 if numerator > 0 {Direction::Up} else {Direction::Down}
                 } else {
                     Direction::Vector(Rational::new(numerator, denominator))
                 },
-            length: (delta_x * delta_x + delta_y * delta_y).sqrt() as isize
+            length: delta_x.abs() + delta_y.abs()
         }
     }
 }
@@ -53,7 +53,7 @@ impl Vector {
 fn main() {
     env_logger::init();
     let asteroids: Vec<Coord> =
-        include_str!("input.txt")
+        include_str!("test1.txt")
         .trim()
         .lines()
         .enumerate()
