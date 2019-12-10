@@ -21,9 +21,11 @@ impl Coord {
 
 #[derive(Eq, PartialEq, Debug, Copy, Clone, Hash)]
 enum Direction {
-    Up,
     Vector(Rational),
-    Down
+    Up,
+    Down,
+    Left,
+    Right
 }
 
 #[derive(Eq, PartialEq, Debug, Copy, Clone, Hash)]
@@ -38,12 +40,16 @@ impl Vector {
         let denominator = b.x - a.x;
         let delta_x = b.x - a.x;
         let delta_y = b.y - a.y;
+        let direction = if denominator == 0 {
+                if numerator < 0 { Direction::Up } else { Direction::Down }
+            } else if numerator == 0 {
+                if denominator > 0 { Direction::Right } else { Direction::Left }
+            } else {
+                Direction::Vector(Rational::new(numerator, denominator))
+            };
+
         Vector {
-            direction: if denominator == 0 {
-                if numerator > 0 {Direction::Up} else {Direction::Down}
-                } else {
-                    Direction::Vector(Rational::new(numerator, denominator))
-                },
+            direction: direction,
             length: delta_x.abs() + delta_y.abs()
         }
     }
@@ -53,7 +59,7 @@ impl Vector {
 fn main() {
     env_logger::init();
     let asteroids: Vec<Coord> =
-        include_str!("test1.txt")
+        include_str!("input.txt")
         .trim()
         .lines()
         .enumerate()
