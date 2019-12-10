@@ -25,10 +25,7 @@ defmodule Solution do
     patha = Graph.get_shortest_path(g, root, "SAN")
     pathb = Graph.get_shortest_path(g, root, "YOU")
     intersection = patha -- (patha -- pathb)
-    lub = Enum.at(intersection, -1)
-
-    transfer = length(Graph.get_shortest_path(g, lub, "SAN")) +
-    length(Graph.get_shortest_path(g, lub, "YOU")) - 4
+    transfer = length(patha) + length(pathb) - 2 * length(intersection) - 2
 
     IO.puts("part2: #{transfer}")
 
