@@ -1,26 +1,54 @@
 use log::*;
 
+use num_rational::Rational;
 use std::collections::HashMap;
 
 #[derive(Eq, PartialEq, Debug, Copy, Clone, Hash)]
 struct Coord {
-    x: i32,
-    y: i32
+    x: isize,
+    y: isize
 }
 
 impl Coord {
-    fn new(x: i32, y: i32) -> Coord {
+    fn new(x: isize, y: isize) -> Coord {
         Coord{x: x, y: y}
     }
 
-    fn angle_distance(a: Coord, b: Coord) -> (f64, f64) {
-        let delta_x = b.x as f64 - a.x as f64;
-        let delta_y = b.y as f64 - a.y as f64;
-        let angle = delta_y.atan2(delta_x);
-        let length = (delta_x * delta_x + delta_y * delta_y).sqrt();
-        (angle, length)
+    fn vector_to(self, other: Coord) -> Vector {
+        Vector::new(self, other)
     }
 }
+
+#[derive(Eq, PartialEq, Debug, Copy, Clone, Hash)]
+enum Direction {
+    Up,
+    Vector(Rational),
+    Down
+}
+
+#[derive(Eq, PartialEq, Debug, Copy, Clone, Hash)]
+struct Vector {
+    direction: Direction,
+    length: isize
+}
+
+impl Vector {
+    fn new(a: Coord, b: Coord) -> Vector {
+        let numerator = b.y - a.y;
+        let denominator = b.x - a.x;
+        let delta_x = b.x as f64 - a.x as f64;
+        let delta_y = b.y as f64 - a.y as f64;
+        Vector {
+            direction: if denominator == 0 {
+                if numerator > 0 {Direction::Up} else {Direction::Down}
+                } else {
+                    Direction::Vector(Rational::new(numerator, denominator))
+                },
+            length: (delta_x * delta_x + delta_y * delta_y).sqrt() as isize
+        }
+    }
+}
+
 
 fn main() {
     env_logger::init();
@@ -32,7 +60,7 @@ fn main() {
         .flat_map(|(y, line)| {
             line.chars().enumerate().flat_map(move |(x, c)| {
                 match c {
-                    '#' => vec![Coord::new(x as i32, y as i32)],
+                    '#' => vec![Coord::new(x as isize, y as isize)],
                     _ => vec![],
                 }
             }
@@ -45,12 +73,15 @@ fn main() {
     for asteroid in asteroids.iter().clone() {
         for other_asteroid in asteroids.iter().clone() {
             if asteroid != other_asteroid {
-                let vector = (asteroid, other_asteroid); // the line from a to b
+                let vector = asteroid.vector_to(*other_asteroid); // the line from a to b
                 let mut los = true;
                 for intercept in asteroids.iter().clone() {
-                    if !has_los(vector, &intercept) {
-                        los = false;
-                        break;
+                    if intercept != asteroid && intercept != other_asteroid {
+                        let intercept_vector = asteroid.vector_to(*intercept);
+                        if los_blocked(vector, intercept_vector) {
+                            los = false;
+                            break;
+                        }
                     }
                 }
                 if los {*los_count_map.entry(*asteroid).or_insert(0) += 1;}
@@ -60,19 +91,13 @@ fn main() {
 
     trace!("{:?}", los_count_map);
 
-    println!("part 1 {:?}", los_count_map.iter().max_by(|(_a, a), (_b, b)| a.cmp(b)).unwrap());
+   let (laser_coord, count) = los_count_map.iter().max_by(|(_a, a), (_b, b)| a.cmp(b)).unwrap();
+
+    println!("part 1 {:?} {}", laser_coord, count);
 }
 
-
-fn has_los(ends: (&Coord, &Coord), other: &Coord) -> bool{
-    //ignore if other is either of the ends
-    if ends.0 == other { return true }
-    if ends.1 == other { return true }
-
-    let (line_angle, line_dist) = Coord::angle_distance(*ends.0, *ends.1);
-    let (intercept_angle, intercept_dist) = Coord::angle_distance(*ends.0, *other);
-
-    if (intercept_dist - line_dist) > 0.001 { return true }
-    if (intercept_angle - line_angle).abs() < 0.001 {return false}
-    true
+fn los_blocked(sight: Vector, other: Vector) -> bool{
+    if other.length > sight.length { return false }
+    if sight.direction == other.direction {return true}
+    false
 }
