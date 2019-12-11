@@ -47,6 +47,7 @@ fn main() {
     let mut robot_x = GRID_X/2;
     let mut robot_y = GRID_Y/2;
     let mut robot_direction = Direction::Up;
+    set_colour(robot_x, robot_y, PanelColour::White, &mut grid);
 
     loop {
         let input_val = match get_colour(robot_x, robot_y, &grid) {
@@ -78,7 +79,7 @@ fn main() {
 
     display(&mut grid);
 
-    println!("part1 {}", grid.iter().filter(|&x| *x != PanelColour::Unpainted).collect::<Vec<&PanelColour>>().len());
+    //println!("part1 {}", grid.iter().filter(|&x| *x != PanelColour::Unpainted).collect::<Vec<&PanelColour>>().len());
 }
 
 fn get_colour(x: usize, y: usize, grid: &Vec<PanelColour>) -> PanelColour {
@@ -125,7 +126,7 @@ fn display(grid: &mut Vec<PanelColour>) -> () {
         match x {
             PanelColour::Unpainted => ' ',
             PanelColour::White     => '#',
-            PanelColour::Black     => '.',
+            PanelColour::Black     => ' ',
         }
     } )
     .collect::<Vec<char>>()
@@ -133,6 +134,5 @@ fn display(grid: &mut Vec<PanelColour>) -> () {
     .map(|x| x.into_iter().collect())
     .collect::<Vec<String>>();
 
-    for line in display {println!("{}", line)};
-    //refresh();
+    for line in display.iter().rev() {println!("{}", line)};
 }
