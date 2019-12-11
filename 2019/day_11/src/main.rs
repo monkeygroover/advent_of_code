@@ -121,7 +121,7 @@ fn display(grid: &mut Vec<PanelColour>) -> () {
     let display: Vec<String> = grid.iter().map(|x| {
         match x {
             PanelColour::Unpainted => ' ',
-            PanelColour::White     => '#',
+            PanelColour::White     => '▒',
             PanelColour::Black     => ' ',
         }
     } )
