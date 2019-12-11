@@ -1,6 +1,6 @@
 use log::*;
 
-use std::thread;
+use std::{thread, time};
 
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
@@ -9,8 +9,8 @@ mod vm;
 
 use crate::vm::{VM, Input};
 
-const GRID_X: usize = 160;
-const GRID_Y: usize = 160;
+const GRID_X: usize = 48;
+const GRID_Y: usize = 6;
 
 enum Direction {
     Up,
@@ -44,8 +44,8 @@ fn main() {
     });
 
     let mut grid = vec![PanelColour::Unpainted; GRID_X * GRID_Y];
-    let mut robot_x = GRID_X/2;
-    let mut robot_y = GRID_Y/2;
+    let mut robot_x = 0;
+    let mut robot_y = 0;
     let mut robot_direction = Direction::Up;
     set_colour(robot_x, robot_y, PanelColour::White, &mut grid);
 
@@ -56,7 +56,7 @@ fn main() {
             PanelColour::White => Input(1),
         };
 
-        let _send_res = input.send(input_val);
+        let _unused = input.send(input_val);
 
         match wait_for_input(&input_receiver) {
             0 => set_colour(robot_x, robot_y, PanelColour::Black, &mut grid),
@@ -72,23 +72,20 @@ fn main() {
         robot_x = new_x;
         robot_y = new_y;
         robot_direction = new_direction;
-        //display(&mut grid);
+        display(&mut grid);
+        thread::sleep(time::Duration::from_millis(10));
     }
 
     let _join_handle = robot_thread.join();
-
-    display(&mut grid);
-
-    //println!("part1 {}", grid.iter().filter(|&x| *x != PanelColour::Unpainted).collect::<Vec<&PanelColour>>().len());
 }
 
 fn get_colour(x: usize, y: usize, grid: &Vec<PanelColour>) -> PanelColour {
-    grid[(GRID_Y - y) * GRID_X + x]
+    grid[y * GRID_X + x]
 }
 
 fn set_colour(x: usize, y: usize, colour: PanelColour, grid: &mut Vec<PanelColour>) -> () {
     debug!("setting {}, {} to {:?}", x, y, colour);
-    grid[(GRID_Y - y) * GRID_X + x] = colour;
+    grid[y * GRID_X + x] = colour;
 }
 
 fn turn_left(x: usize, y: usize, direction: Direction) -> (usize, usize, Direction) {
@@ -120,7 +117,6 @@ fn wait_for_input(input_receiver: &Receiver<Input>) -> i64 {
 }
 
 fn display(grid: &mut Vec<PanelColour>) -> () {
-    //print!("{}", termion::clear::All);
     print!("{}[2J", 27 as char);
     let display: Vec<String> = grid.iter().map(|x| {
         match x {
@@ -134,5 +130,5 @@ fn display(grid: &mut Vec<PanelColour>) -> () {
     .map(|x| x.into_iter().collect())
     .collect::<Vec<String>>();
 
-    for line in display.iter().rev() {println!("{}", line)};
+    for line in display {println!("{}", line)}
 }
