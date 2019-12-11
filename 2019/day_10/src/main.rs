@@ -22,6 +22,7 @@ impl Coord {
 #[derive(Eq, PartialEq, Debug, Copy, Clone, Hash)]
 enum Direction {
     Vector(Rational),
+    VectorNeg(Rational),
     Up,
     Down,
     Left,
@@ -36,21 +37,26 @@ struct Vector {
 
 impl Vector {
     fn new(a: Coord, b: Coord) -> Vector {
-        let numerator = b.y - a.y;
-        let denominator = b.x - a.x;
-        let delta_x = b.x - a.x;
-        let delta_y = b.y - a.y;
+        let numerator = b.x - a.x;
+        let denominator = b.y - a.y;
+
+        if numerator == 0 && denominator == 0 {panic!("should not happen")}
+
         let direction = if denominator == 0 {
-                if numerator < 0 { Direction::Up } else { Direction::Down }
+                if numerator < 0 { Direction::Left } else { Direction::Right }
             } else if numerator == 0 {
-                if denominator > 0 { Direction::Right } else { Direction::Left }
+                if denominator > 0 { Direction::Down } else { Direction::Up }
             } else {
-                Direction::Vector(Rational::new(numerator, denominator))
+                if numerator < 0 {
+                    Direction::VectorNeg(Rational::new(numerator, denominator))
+                } else{
+                    Direction::Vector(Rational::new(numerator, denominator))
+                }
             };
 
         Vector {
             direction: direction,
-            length: delta_x.abs() + delta_y.abs()
+            length: denominator.abs() + numerator.abs()
         }
     }
 }
@@ -73,6 +79,15 @@ fn main() {
             )
             })
         .collect();
+
+    // let a = Coord::new(2, 2);
+    // let b = Coord::new(3, 4);
+    // let c = Coord::new(1, 0);
+
+    // trace!("***** {:?} {:?}", a.vector_to(b), a.vector_to(c)  );
+    // return;
+
+    //trace!("{}", los_blocked(Vector::new(Coord::new(), Coord::new())));
 
     let mut los_count_map: HashMap<Coord, i32> = HashMap::new();
 
@@ -97,13 +112,13 @@ fn main() {
 
     trace!("{:?}", los_count_map);
 
-   let (laser_coord, count) = los_count_map.iter().max_by(|(_a, a), (_b, b)| a.cmp(b)).unwrap();
+    let (laser_coord, count) = los_count_map.iter().max_by(|(_a, a), (_b, b)| a.cmp(b)).unwrap();
 
     println!("part 1 {:?} {}", laser_coord, count);
 }
 
 fn los_blocked(sight: Vector, other: Vector) -> bool{
     if other.length > sight.length { return false }
-    if sight.direction == other.direction {return true}
+    if sight.direction == other.direction { return true }
     false
 }
