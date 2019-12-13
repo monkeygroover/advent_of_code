@@ -9,3 +9,5 @@ edition = "2018"
 [dependencies]
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_info"] }
 env_logger = "0.7.1"
+
+crossterm = "0.14.0"

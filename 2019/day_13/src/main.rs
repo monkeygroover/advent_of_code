@@ -3,6 +3,16 @@ use log::*;
 mod vm;
 use crate::vm::{VM, State};
 
+use std::{thread, time};
+
+use std::io::{stdout, Write};
+use crossterm::{
+    cursor::MoveTo,
+    execute,
+    style::{style, Color, PrintStyledContent},
+    terminal::{Clear, ClearType},
+};
+
 const GRID_X: usize = 42;
 const GRID_Y: usize = 24;
 
@@ -30,6 +40,11 @@ impl Tile {
 
 fn main() {
     env_logger::init();
+
+    execute!(
+        stdout(),
+        Clear(ClearType::All)
+    ).unwrap();
 
     let mut initial_memory: Vec<i64> = include_str!("input.txt")
     .trim()
@@ -65,10 +80,12 @@ fn main() {
                         if tile == Tile::Ball {
                             current_ball_x = Some(x);
                             display(score, &mut grid);
+                            thread::sleep(time::Duration::from_millis(5));
                         }
                         if tile == Tile::Paddle {
                             current_paddle_x = Some(x);
                             display(score, &mut grid);
+                            thread::sleep(time::Duration::from_millis(5));
                         }
                         set_tile(x as usize, y as usize, tile, &mut grid);
                     }
@@ -104,7 +121,6 @@ fn set_tile(x: usize, y: usize, tile: Tile, grid: &mut Vec<Tile>) -> () {
 }
 
 fn display(score: i64, grid: &mut Vec<Tile>) -> () {
-    print!("{}[2J", 27 as char);
     let display: Vec<String> = grid.iter().map(|x| {
         match x {
             Tile::Empty => ' ',
@@ -119,6 +135,17 @@ fn display(score: i64, grid: &mut Vec<Tile>) -> () {
     .map(|x| x.into_iter().collect())
     .collect::<Vec<String>>();
 
-    for line in display {println!("{}", line)}
-    println!("{}", score);
+    for (i, line) in display.iter().enumerate()  {
+        execute!(
+            stdout(),
+            MoveTo(0,(i) as u16),
+            PrintStyledContent(style(line).with(Color::Yellow))
+        ).unwrap();
+    }
+
+    execute!(
+        stdout(),
+        MoveTo(0,23),
+        PrintStyledContent(style(score).with(Color::Green))
+    ).unwrap();
 }
