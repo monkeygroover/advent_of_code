@@ -1,11 +1,10 @@
 use log::*;
 
-use std::sync::mpsc::{Sender, Receiver};
-use std::sync::mpsc;
-
 #[derive(PartialEq)]
-enum State {
+pub enum State {
     Continue,
+    InputPending,
+    OutputProduced(i64),
     Halt
 }
 
@@ -17,36 +16,30 @@ pub struct VM{
     memory: Vec<i64>,
     pc: i64,
     rel_base: i64,
-    receiver: Receiver<Input>,
-    output: Option<Sender<Input>>,
+    pending_input_param: i64,
+    pending_input_mode: i64
 }
 
 impl VM {
-    pub fn new(name: &str, initial_memory: Vec<i64>) -> (VM, Sender<Input>) {
-        let (sender, receiver) = mpsc::channel();
-
-        let vm = VM{name: name.to_string(),
-           memory: initial_memory,
-           pc: 0,
-           rel_base: 0,
-           receiver: receiver,
-           output: None,
-           };
-
-           (vm, sender.clone())
+    pub fn new(name: &str, initial_memory: Vec<i64>) -> VM {
+        VM{ name: name.to_string(),
+            memory: initial_memory,
+            pc: 0,
+            rel_base: 0,
+            pending_input_param: 0,
+            pending_input_mode: 0 }
     }
 
-    pub fn run(&mut self, output: Option<Sender<Input>>) -> () {
-        self.output = output;
-        while self.handle_op() != State::Halt {
-                trace!("{} continue pc = {}", self.name, self.pc);
+    pub fn run(&mut self) -> State {
+        loop {
+            let state = self.handle_op();
+            if state != State::Continue { return state; }
         }
+    }
 
-        trace!("{} HALTING", self.name);
-        let _res = match self.output.clone() {
-            Some(output) => output.send(Input(99)),
-            None => Ok(())
-        };
+    pub fn handle_input(&mut self, input: i64) -> State {
+        self.set_memory(self.pending_input_param, input, self.pending_input_mode);
+        State::Continue
     }
 
     fn handle_op(&mut self) -> State {
@@ -165,32 +158,17 @@ impl VM {
 
     fn read(&mut self, modes: Vec<i64>) -> State {
         let param = self.get_memory(self.pc+1);
-        debug!("{} read pending for [{}] {:?}", self.name, param, modes);
-
-        match self.receiver.recv() {
-            Ok(Input(value)) => {
-                debug!("{} got {} for [{}]", self.name, value, param);
-                self.set_memory(param ,value, modes[0]);
-            }
-            Err(_) => panic!("received junk")
-        }
-
+        trace!("{} read pending for [{}] {:?}", self.name, param, modes);
+        self.pending_input_param = param;
+        self.pending_input_mode = modes[0];
         self.pc = self.pc + 2;
-        State::Continue
+        State::InputPending
     }
 
     fn write(&mut self, modes: Vec<i64>) -> State {
         let out = self.get_param(1, &modes);
-
-        //send this to next amp if set
-        //println!("{} -> {}", self.name, out);
-        let _res = match self.output.clone() {
-            Some(output) => output.send(Input(out)),
-            None => Ok(())
-        };
-
         self.pc = self.pc + 2;
-        State::Continue
+        State::OutputProduced(out)
     }
 
     fn set_rel_base(&mut self, modes: Vec<i64>) -> State {

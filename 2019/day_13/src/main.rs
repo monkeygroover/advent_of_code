@@ -1,16 +1,10 @@
 use log::*;
 
-use std::thread;
-
-use std::sync::mpsc;
-use std::sync::mpsc::Receiver;
-
 mod vm;
-
-use crate::vm::{VM, Input};
+use crate::vm::{VM, State};
 
 const GRID_X: usize = 42;
-const GRID_Y: usize = 23;
+const GRID_Y: usize = 24;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum Tile {
@@ -43,40 +37,64 @@ fn main() {
     .map(|s| s.parse::<i64>().unwrap())
     .collect();
 
+    initial_memory[0] = 2; // free play
     initial_memory.resize(1048576, 0);
 
-    let (input_sender, input_receiver) = mpsc::channel::<Input>();
-    let (mut game, _input) = VM::new("Arcanoid", initial_memory);
-    let game_thread = thread::spawn(move || {
-        game.run(Some(input_sender))
-    });
+    let mut game = VM::new("Arcanoid", initial_memory);
 
     let mut grid = vec![Tile::Empty; GRID_X * GRID_Y];
+    let mut score = 0;
+
+    let mut current_paddle_x: Option<i64> = None;
+    let mut current_ball_x: Option<i64> = None;
+
+    let mut outputs = vec![];
 
     loop {
-        let x = wait_for_input(&input_receiver);
-        if x == 99 { break; } //TODO nicer way to exit
-        let y = wait_for_input(&input_receiver);
-        let tile = Tile::new(wait_for_input(&input_receiver));
-        set_tile(x as usize, y as usize, tile, &mut grid);
+        match game.run() {
+            State::OutputProduced(val) => {
+                outputs.push(val);
+                if outputs.len() == 3 {
+                    let x = outputs[0];
+                    let y = outputs[1];
+
+                    if x == -1 && y == 0 {
+                        score = outputs[2];
+                    } else {
+                        let tile = Tile::new(outputs[2]);
+                        if tile == Tile::Ball {
+                            current_ball_x = Some(x);
+                            display(score, &mut grid);
+                        }
+                        if tile == Tile::Paddle {
+                            current_paddle_x = Some(x);
+                            display(score, &mut grid);
+                        }
+                        set_tile(x as usize, y as usize, tile, &mut grid);
+                    }
+
+                    outputs.clear();
+                }
+            },
+            State::InputPending => {
+                let joy = move_joystick(current_ball_x.unwrap(), current_paddle_x.unwrap());
+                game.handle_input(joy);
+            },
+            State::Halt => break,
+            State::Continue => ()
+        }
     }
 
-    display(&mut grid);
-
-    let _join_handle = game_thread.join();
-
-    println!("part1: {}", grid.iter().filter(|t| **t == Tile::Block).collect::<Vec<&Tile>>().len());
-
+    display(score, &mut grid);
 }
 
-
-fn wait_for_input(input_receiver: &Receiver<Input>) -> i64 {
-    match input_receiver.recv() {
-        Ok(Input(value)) => {
-            debug!("got {}", value);
-            value
-        }
-        Err(_) => panic!("received junk")
+fn move_joystick(ball_x: i64, paddle_x: i64) -> i64 {
+    if paddle_x < ball_x {
+        1
+    } else if paddle_x > ball_x {
+        -1
+    } else {
+        0
     }
 }
 
@@ -85,7 +103,7 @@ fn set_tile(x: usize, y: usize, tile: Tile, grid: &mut Vec<Tile>) -> () {
     grid[y * GRID_X + x] = tile;
 }
 
-fn display(grid: &mut Vec<Tile>) -> () {
+fn display(score: i64, grid: &mut Vec<Tile>) -> () {
     print!("{}[2J", 27 as char);
     let display: Vec<String> = grid.iter().map(|x| {
         match x {
@@ -102,4 +120,5 @@ fn display(grid: &mut Vec<Tile>) -> () {
     .collect::<Vec<String>>();
 
     for line in display {println!("{}", line)}
+    println!("{}", score);
 }
