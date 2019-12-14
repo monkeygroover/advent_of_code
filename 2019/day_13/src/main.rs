@@ -7,7 +7,7 @@ use std::{thread, time};
 
 use std::io::{stdout, Write};
 use crossterm::{
-    cursor::MoveTo,
+    cursor::{MoveTo, Hide},
     execute,
     style::{style, Color, PrintStyledContent},
     terminal::{Clear, ClearType},
@@ -43,7 +43,8 @@ fn main() {
 
     execute!(
         stdout(),
-        Clear(ClearType::All)
+        Clear(ClearType::All),
+        Hide
     ).unwrap();
 
     let mut initial_memory: Vec<i64> = include_str!("input.txt")
@@ -58,7 +59,7 @@ fn main() {
     let mut game = VM::new("Arcanoid", initial_memory);
 
     let mut grid = vec![Tile::Empty; GRID_X * GRID_Y];
-    let mut score = 0;
+    let mut score: i64;
 
     let mut current_paddle_x: Option<i64> = None;
     let mut current_ball_x: Option<i64> = None;
@@ -75,19 +76,19 @@ fn main() {
 
                     if x == -1 && y == 0 {
                         score = outputs[2];
+                        display_score(score);
                     } else {
                         let tile = Tile::new(outputs[2]);
                         if tile == Tile::Ball {
                             current_ball_x = Some(x);
-                            display(score, &mut grid);
                             thread::sleep(time::Duration::from_millis(5));
                         }
                         if tile == Tile::Paddle {
                             current_paddle_x = Some(x);
-                            display(score, &mut grid);
                             thread::sleep(time::Duration::from_millis(5));
                         }
                         set_tile(x as usize, y as usize, tile, &mut grid);
+                        display_tile(x, y, tile);
                     }
 
                     outputs.clear();
@@ -101,8 +102,6 @@ fn main() {
             State::Continue => ()
         }
     }
-
-    display(score, &mut grid);
 }
 
 fn move_joystick(ball_x: i64, paddle_x: i64) -> i64 {
@@ -120,29 +119,23 @@ fn set_tile(x: usize, y: usize, tile: Tile, grid: &mut Vec<Tile>) -> () {
     grid[y * GRID_X + x] = tile;
 }
 
-fn display(score: i64, grid: &mut Vec<Tile>) -> () {
-    let display: Vec<String> = grid.iter().map(|x| {
-        match x {
-            Tile::Empty => ' ',
-            Tile::Wall => '▓',
-            Tile::Block => '▒',
-            Tile::Paddle => '-',
-            Tile::Ball => 'o',
-        }
-    } )
-    .collect::<Vec<char>>()
-    .chunks(GRID_X)
-    .map(|x| x.into_iter().collect())
-    .collect::<Vec<String>>();
+fn display_tile(x: i64, y: i64, tile: Tile) -> () {
+    let (graphic, colour) = match tile {
+            Tile::Empty => (' ', Color::Black),
+            Tile::Wall => ('▓', Color::AnsiValue(172)),
+            Tile::Block => ('▒', Color::AnsiValue(171)),
+            Tile::Paddle => ('—', Color::Yellow),
+            Tile::Ball => ('o', Color::White),
+        };
 
-    for (i, line) in display.iter().enumerate()  {
-        execute!(
-            stdout(),
-            MoveTo(0,(i) as u16),
-            PrintStyledContent(style(line).with(Color::Yellow))
-        ).unwrap();
-    }
+    execute!(
+        stdout(),
+        MoveTo(x as u16, y as u16),
+        PrintStyledContent(style(graphic).with(colour))
+    ).unwrap();
+}
 
+fn display_score(score: i64) -> () {
     execute!(
         stdout(),
         MoveTo(0,23),
