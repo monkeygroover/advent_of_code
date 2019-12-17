@@ -5,40 +5,32 @@ fn main() {
     .map(|c| c.to_string().parse::<i64>().unwrap())
     .collect();
 
+    let offset = initial_data.clone().iter().enumerate().take(7).fold(0, |acc, (i, digit)| {
+        acc + digit * 10i64.pow(6 - i as u32)
+    }) as usize;
 
-    let data = (0..100).fold(initial_data, |data, _acc| {
+    let repeated_data = initial_data.repeat(10000).iter().cloned().skip(offset).collect::<Vec<i64>>();
+
+    let data2 = (0..100).fold(repeated_data, |data, _acc| {
         phase(data)
     });
 
-    println!("part1: {:?}", data.iter().take(8).map(|d| d.to_string()).collect::<Vec<String>>());
+    let output2 = data2.iter().enumerate().take(8).fold(0, |acc, (i, digit)| {
+        acc + digit * 10i64.pow(7 - i as u32)
+    });
+
+    println!("part2: {}", output2);
 }
 
-
 fn phase(input: Vec<i64>) -> Vec<i64> {
-    let pattern = |base: Vec<i64>, repeat: usize| {
-        let mut count = 0;
-        let mut repeat_count = 0;
-        std::iter::from_fn(move || {
-            repeat_count += 1;
-            if repeat_count == repeat {
-                count += 1;
-                if count == base.len() {count = 0}
-                repeat_count = 0;
-            }
-            Some(base[count])
-        })
-    };
+    let len = input.len();
+    let mut new_array = vec![0;len];
 
-    (1..=input.len()).fold(
-        vec![], |mut acc : Vec<i64>, i| {
-            let pat = pattern(vec![0,1,0,-1], i);
-            let new_digit = input.clone().iter().zip(pat).collect::<Vec<(&i64, i64)>>()
-            .iter()
-            .fold(0, |acc, (i, val)| {
-                acc + (**i * val)
-            }
-            );
-            acc.push(new_digit.abs() % 10);
-            acc
-        })
+    new_array[len - 1] = input[len - 1];
+
+    for (i, val) in input.iter().rev().enumerate().skip(1) {
+        new_array[len - i - 1] = (new_array[len - i] + val) % 10;
+    }
+
+    new_array
 }
