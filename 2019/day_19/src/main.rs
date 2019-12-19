@@ -50,40 +50,66 @@ fn main() {
 
     let mut grid = vec![PullState::Unknown; GRID_X as usize * GRID_Y as usize];
 
-    //generate coord pairs
+    // generate coord pairs
     for y in 0..GRID_Y {
         for x in 0..GRID_X {
-            let mut coords: Vec<i64> = vec![];
-            coords.push(y);
-            coords.push(x);
-
-            let mut input = vec![];
-
-            let mut bot = VM::new("Robot", initial_memory.clone());
-
-            loop {
-                match bot.run() {
-                    State::InputPending => {
-                        let coord = coords.pop().unwrap();
-                        bot.handle_input(coord);
-                        info!("InputPending; pushing {}", coord);
-                        input.push(coord);
-                    },
-                    State::OutputProduced(val) => {
-                        info!("OutputProduced({})", val);
-                        let y = input.pop().unwrap();
-                        let x = input.pop().unwrap();
-                        set_tile(x, y, PullState::new(val), &mut grid);
-                    },
-                    State::Halt => {info!("Halt"); break},
-                    State::Continue => ()
-                }
-            }
+            let state = run_bot(x, y, initial_memory.clone());
+            set_tile(x, y, state, &mut grid);
         }
     }
 
     println!("part1: {}", grid.iter().filter(|g| **g == PullState::Pulled).collect::<Vec<&PullState>>().len());
+
+    // part 2 scan along the bottom edge looking for the first square that fits
+    for y in 100..10000 {
+        // find x
+        let mut x = y * 25 / 15;
+        loop {
+            if run_bot(x, y, initial_memory.clone()) == PullState::Pulled {
+                break;
+            }
+            x +=1;
+        }
+
+        let test_bl = run_bot(x, y, initial_memory.clone());
+        let test_tr = run_bot(x+99, y-99, initial_memory.clone());
+
+        //println!("{}, {} {:?} {:?}", x, y, test_bl, test_tr);
+
+        if test_bl == PullState::Pulled && test_tr == PullState::Pulled {
+            println!("part2: {}", x * 10000 + y-99);
+            return;
+        }
+    }
 }
+
+fn run_bot(x: i64, y: i64, initial_memory: Vec<i64>) -> PullState {
+    let mut coords: Vec<i64> = vec![];
+    coords.push(y);
+    coords.push(x);
+
+    let mut input = vec![];
+
+    let mut bot = VM::new("Robot", initial_memory.clone());
+
+    loop {
+        match bot.run() {
+            State::InputPending => {
+                let coord = coords.pop().unwrap();
+                bot.handle_input(coord);
+                info!("InputPending; pushing {}", coord);
+                input.push(coord);
+            },
+            State::OutputProduced(val) => {
+                info!("OutputProduced({})", val);
+                return PullState::new(val);
+            },
+            State::Halt => {info!("Halt")},
+            State::Continue => ()
+        }
+    }
+}
+
 
 fn set_tile(x: i64, y: i64, pull: PullState, grid: &mut Vec<PullState>) -> () {
     debug!("setting {}, {} to {:?}", x, y, pull);
