@@ -26,7 +26,6 @@ WALK
 
     let script2 =
 "NOT A J
-AND D J
 NOT B T
 AND D T
 AND H T
