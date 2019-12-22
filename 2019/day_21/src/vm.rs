@@ -15,7 +15,7 @@ pub struct VM{
     name: String,
     memory: Vec<i64>,
     pc: i64,
-    rel_base: i64,
+    ix: i64,
     pending_input_param: i64,
     pending_input_mode: i64
 }
@@ -25,7 +25,7 @@ impl VM {
         VM{ name: name.to_string(),
             memory: initial_memory,
             pc: 0,
-            rel_base: 0,
+            ix: 0,
             pending_input_param: 0,
             pending_input_mode: 0 }
     }
@@ -58,7 +58,7 @@ impl VM {
             6 => self.jump_if_false(mode_list),
             7 => self.less_than(mode_list),
             8 => self.equals(mode_list),
-            9 => self.set_rel_base(mode_list),
+            9 => self.set_ix(mode_list),
             x => panic!("bad op code {}", x)
         }
     }
@@ -71,7 +71,7 @@ impl VM {
     fn set_memory(&mut self, address: i64, value: i64, mode: i64) -> () {
         match mode {
             0 => self.memory[address as usize] = value,
-            2 => self.memory[(self.rel_base + address) as usize] = value,
+            2 => self.memory[(self.ix + address) as usize] = value,
             _ => panic!("bullshit")
         };
     }
@@ -83,11 +83,11 @@ impl VM {
         let res = match mode {
             0 => self.get_memory(val),
             1 => val,
-            2 => self.get_memory(self.rel_base + val),
+            2 => self.get_memory(self.ix + val),
             _ => panic!("bad mode")
         };
 
-        trace!("get_param {} {:?} {}", res, mode, self.rel_base);
+        trace!("get_param {} {:?} {}", res, mode, self.ix);
 
         res
     }
@@ -171,11 +171,11 @@ impl VM {
         State::OutputProduced(out)
     }
 
-    fn set_rel_base(&mut self, modes: Vec<i64>) -> State {
+    fn set_ix(&mut self, modes: Vec<i64>) -> State {
         let a = self.get_param(1, &modes);
-        let orig_base = self.rel_base;
-        self.rel_base += a;
-        debug!("{} rel_base {} -> {}", self.name, orig_base, self.rel_base);
+        let orig_base = self.ix;
+        self.ix += a;
+        debug!("{} ix {} -> {}", self.name, orig_base, self.ix);
         self.pc = self.pc + 2;
         State::Continue
     }
