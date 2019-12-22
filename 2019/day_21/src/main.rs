@@ -22,10 +22,30 @@ OR T J
 WALK
 ";
 
-    println!("part1 damage {}", run_springscript(script1, initial_memory));
+    println!("part1 damage {:?}", run_springscript(script1, initial_memory.clone()));
+
+    let script2 =
+"NOT A J
+AND D J
+NOT B T
+AND D T
+AND H T
+OR T J
+NOT C T
+AND D T
+AND E T
+OR T J
+NOT C T
+AND D T
+AND H T
+OR T J
+RUN
+";
+
+    println!("part2 damage {:?}", run_springscript(script2, initial_memory.clone()));
 }
 
-fn run_springscript(script: &str, initial_memory: Vec<i64>) -> i64 {
+fn run_springscript(script: &str, initial_memory: Vec<i64>) -> Option<i64> {
     let mut bot = VM::new("Robot", initial_memory);
 
     let mut script_iter = script.chars();
@@ -45,10 +65,10 @@ fn run_springscript(script: &str, initial_memory: Vec<i64>) -> i64 {
                 if val < 256 {
                     print!("{}", val as u8 as char);
                 } else {
-                    return val;
+                    return Some(val);
                 }
             },
-            State::Halt => {info!("Halt")},
+            State::Halt => {info!("Halt"); return None},
             State::Continue => ()
         }
     }
