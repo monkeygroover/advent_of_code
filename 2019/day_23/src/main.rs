@@ -16,15 +16,35 @@ fn main() {
 
     let mut nics = (0..50).map(|addr| NIC::boot(addr, initial_memory.clone())).collect::<Vec<NIC>>();
 
+    let mut nat: Option<(i64, i64)> = None;
+
     loop {
         for i in 0..nics.len() {
             if let NICState::OutputProduced(addr, x, y) = nics[i].run_continutation() {
                 if addr == 255 {
-                    println!{"part1: {}", y};
+                    nat = Some((x, y));
                 } else {
                     nics[addr as usize].queue_input(x);
                     nics[addr as usize].queue_input(y);
                 }
+            }
+        }
+
+        //check if idle
+        let mut idle = true;
+        for i in 0..nics.len() {
+            if !nics[i].queue_empty() {
+                idle = false;
+                break;
+            }
+        }
+
+        if idle {
+            info!("idle");
+            if let Some((x, y)) = nat {
+                nics[0].queue_input(x);
+                nics[0].queue_input(y);
+                println!{"part2: {}", y};
             }
         }
     }
@@ -40,7 +60,8 @@ enum NICState {
 struct NIC {
     vm: VM,
     input_q : VecDeque<i64>,
-    output_acc: Vec<i64>
+    output_acc: Vec<i64>,
+    idle: bool
 }
 
 impl NIC {
@@ -50,11 +71,16 @@ impl NIC {
         assert!(vm.handle_input(address) == State::Continue);
         NIC{vm: vm,
             input_q: VecDeque::new(),
-            output_acc: vec![]}
+            output_acc: vec![],
+            idle: false}
     }
 
     fn queue_input(&mut self, input: i64) -> () {
         self.input_q.push_back(input);
+    }
+
+    fn queue_empty(&self) -> bool {
+        self.input_q.len() == 0 && self.idle
     }
 
     fn run_continutation(&mut self) -> NICState {
@@ -63,9 +89,11 @@ impl NIC {
                 match self.input_q.pop_front() {
                     Some(value) => {
                         info!("=> {}", value);
+                        self.idle = false;
                         self.vm.handle_input(value);
                     },
                     None => {
+                        self.idle = true;
                         self.vm.handle_input(-1);
                     }
                 }
