@@ -45,9 +45,13 @@ fn main() {
             })
         .collect();
 
-    let tree_count = count_trees_on_path(3,1,trees, width, height);
+    let tree_count1 = count_trees_on_path(1,1,trees.clone(), width, height);
+    let tree_count2 = count_trees_on_path(3,1,trees.clone(), width, height);
+    let tree_count3 = count_trees_on_path(5,1,trees.clone(), width, height);
+    let tree_count4 = count_trees_on_path(7,1,trees.clone(), width, height);
+    let tree_count5 = count_trees_on_path(1,2,trees, width, height);
 
-    println!("part1 {}", tree_count);
+    println!("{}, {}", tree_count2, tree_count1 * tree_count2 * tree_count3 * tree_count4 * tree_count5);
 }
 
 fn count_trees_on_path(x_step: u32, y_step: u32, trees: Vec<Coord>, repeat: u32, height: u32) -> u32 {
