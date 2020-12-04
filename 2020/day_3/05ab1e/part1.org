@@ -1,15 +1,12 @@
-|ÇvyN3*è35Q}O
+|vyN3*è'#Q}O
 
 | split
 
-Ç = convert strings to codepage lists
-
 v = loop with index
-
 y = push the loop item on stack
 N = push the loop index on stack
 3* = multiply the index by 3
 è = a[b] i.e. take the value at three times the index from the codepage lists
-35Q = if eQual to 35 ("#" symbol is 35) 1 else 0
+'#Q = if eQual to # 1 else 0
 } end block
 O = sum all the 1s and 0s to get the total matching
