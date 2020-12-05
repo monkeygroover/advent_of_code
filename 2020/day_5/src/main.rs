@@ -1,5 +1,11 @@
 use itertools::Itertools;
 
+#[derive(Debug, Copy, Clone)]
+enum Split {
+    Lower,
+    Upper
+}
+
 fn main() {
     let input = include_str!("input.txt")
     .trim()
@@ -9,42 +15,13 @@ fn main() {
     let column_list: Vec<i32> = (0..8).collect();
 
     let seat_ids = input.map(|line| {
-        let first_7 = line.chars().take(7);
-        let last_3 = line.chars().skip(7).take(3);
+        let first_7: Vec<Split> = line.chars().take(7).map(|ch| match ch { 'F' => Split::Lower, 'B' => Split::Upper, _ => panic!("bad")}).collect();
+        let row = bin_search(row_list.clone(), first_7);
 
-        let column = first_7.fold(row_list.clone(),
-            |mut acc, half| match half {
-                'F' => {
-                    let split_point = acc.len() / 2;
-                    acc.truncate(split_point);
-                    acc
-                },
-                'B' => {
-                    let split_point = acc.len() / 2;
-                    let split = acc.split_off(split_point);
-                    split
-                },
-                _ => panic!("Bad value")
-            }
-        );
+        let last_3: Vec<Split> = line.chars().skip(7).take(3).map(|ch| match ch { 'L' => Split::Lower, 'R' => Split::Upper, _ => panic!("bad")}).collect();
+        let column = bin_search(column_list.clone(), last_3);
 
-        let row = last_3.fold(column_list.clone(),
-            |mut acc, half| match half {
-                'L' => {
-                let split_point = acc.len() / 2;
-                    acc.truncate(split_point);
-                    acc
-                },
-                'R' => {
-                    let split_point = acc.len() / 2;
-                    let split = acc.split_off(split_point);
-                    split
-                },
-                _ => panic!("Bad value")
-            }
-        );
-
-        column[0] * 8 + row[0]
+        row * 8 + column
     });
 
     let part1 = seat_ids.clone().max().unwrap();
@@ -53,4 +30,24 @@ fn main() {
     let part2 = seat_before_gap + 1;
     
     println!("{} {}", part1, part2);
+}
+
+fn bin_search(search_list: Vec<i32>, split_sequence: Vec<Split>) -> i32 {
+    let list = split_sequence.iter().fold(
+        search_list,
+        |mut acc, half| match half {
+            Split::Lower => {
+                let split_point = acc.len() / 2;
+                acc.truncate(split_point);
+                acc
+            },
+            Split::Upper => {
+                let split_point = acc.len() / 2;
+                let split = acc.split_off(split_point);
+                split
+            }
+        }
+    );
+
+    list[0]
 }
