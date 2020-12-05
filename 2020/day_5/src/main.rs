@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 fn main() {
     let input = include_str!("input.txt")
     .trim()
@@ -6,7 +8,7 @@ fn main() {
     let row_list: Vec<i32> = (0..128).collect();
     let column_list: Vec<i32> = (0..8).collect();
 
-    let blah: i32 = input.map(|line| {
+    let seat_ids: Vec<i32> = input.map(|line| {
         let first_7 = line.chars().take(7);
         let last_3 = line.chars().skip(7).take(3);
         first_7.fold((row_list.clone(), last_3),
@@ -45,7 +47,14 @@ fn main() {
             (i[0], row[0])
         })
         .map(|(a, b)| a * 8 + b)
-        .max().unwrap();
+        .collect();
 
-    println!("{:?}", blah);
+    let part1 = seat_ids.iter().max().unwrap();
+
+    let mut seats = seat_ids.clone();
+    seats.sort();
+    let (seat_before, _) = seats.iter().tuple_windows().find(|(&a, &b)| b != a + 1).unwrap();
+    let part2 = seat_before + 1;
+    
+    println!("{} {:?}", part1, part2);
 }
