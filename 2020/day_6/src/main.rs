@@ -5,20 +5,27 @@ fn main() {
     .trim()
     .replace("\n\n", ";");
 
-    let part1 = cleaned_input
-    .replace("\n", "")
+    let group_sets = cleaned_input
     .split(';')
-    .fold(0, |acc, line| { acc + HashSet::<char>::from_iter(line.chars()).len() });
-
-    let part2 = cleaned_input
-    .split(';')
-    .fold(0, |acc, group| {
-        let mut answer_sets = group
+    .map(|group| {
+        group
         .lines()
-        .map(|person| { HashSet::<char>::from_iter(person.chars()) });
+        .map(|person| { HashSet::<char>::from_iter(person.chars()) })
+    });
 
-        let intersection_set = answer_sets.next()
-        .map(|first_set| answer_sets.fold(first_set, |set1, set2| &set1 & &set2));
+    // union
+    let part1 = group_sets.clone()
+    .fold(0, |acc, mut group_set| {
+        let intersection_set = group_set.next()
+        .map(|first_set| group_set.fold(first_set, |set1, set2| &set1 | &set2));
+        acc + intersection_set.unwrap().len()
+    });
+
+    // intersection
+    let part2 = group_sets
+    .fold(0, |acc, mut group_set| {
+        let intersection_set = group_set.next()
+        .map(|first_set| group_set.fold(first_set, |set1, set2| &set1 & &set2));
         acc + intersection_set.unwrap().len()
     });
 
