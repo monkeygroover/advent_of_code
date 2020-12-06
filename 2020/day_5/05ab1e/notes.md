@@ -12,7 +12,7 @@
 
 # part 2
 
-    |'B'1.:'F0.:'R1.:'L0.:2öD<Kн>
+    |'B'1.:'F0.:'R1.:'L0.:2öD<KW>
 
     | -> split lines to array
      'B'1.: -> replace all B with 1
@@ -23,9 +23,9 @@
                             D-> dup
                              < -> decrement all values in second copy
                               K -> Push a without b's (i.e the only seats without a value one higher)
-                               н -> first one (we dont want the bad value at the end)
+                               W -> smallest one (we dont want the bad value at the end)
                                 > -> inc by one to get the missing seat  
 
 # both + the AND 4 (not zero) trick...
 
-    |εÇ4&0QJ}2öZ,D<Kн>,
+    |εÇ4&0QJ}2öZ,D<KW>,
