@@ -5,18 +5,15 @@ fn main() {
     .replace("\n\n", ";")
     .replace("\n", "");
 
-    let data: Vec<HashSet<char>> = cleaned_input
+    let part1 = cleaned_input
                 .split(';')
-                .map(|line| {
+                .fold(0, |acc, line| {
                     let mut chars = HashSet::new();
                     for ch in line.chars() {
                         chars.insert(ch);
                     }
-                    chars
-                })
-                .collect();
-
-    let part1 = data.iter().fold(0, |acc, set| acc + set.len());
+                    acc + chars.len()
+                });
 
     println!("{:?}", part1);
 }
