@@ -1,6 +1,6 @@
 use log::*;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Ins {
     Nop,
     Acc,
@@ -10,7 +10,8 @@ pub enum Ins {
 pub struct VM{
     memory: Vec<(Ins, i32)>,
     pc: usize, 
-    acc: i32
+    acc: i32,
+    exited: bool
 }
 
 impl VM {
@@ -18,7 +19,8 @@ impl VM {
         VM{
             memory: initial_memory,
             pc: 0,
-            acc: 0}
+            acc: 0,
+            exited: false}
     }
 
     pub fn step(&mut self) -> () {
@@ -29,6 +31,8 @@ impl VM {
             Ins::Acc => self.do_acc(val),
             Ins::Jmp => self.do_jmp(val)
         };
+
+        self.exited = self.pc >= self.memory.len();
     }
 
     pub fn acc(&self) -> i32 {
@@ -37,6 +41,10 @@ impl VM {
 
     pub fn pc(&self) -> usize {
         self.pc
+    }
+
+    pub fn exited(&self) -> bool {
+        self.exited
     }
 
     fn get_instruction(&mut self) -> (Ins, i32) {
