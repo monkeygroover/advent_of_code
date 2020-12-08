@@ -59,12 +59,13 @@ fn main() {
 // loop, return Result of last acc value if code exits,
 // or Err of last acc value if loop detected
 fn loop_detect(mut vm: VM) -> Result<i32, i32> {
-    let mut instruction_history = vec![];
+    let mut instruction_history = vec![vm.pc()];
 
     while !vm.exited() {
-        let pc = vm.pc();
         let acc = vm.acc();
         vm.step();
+        let pc = vm.pc();
+  
         if instruction_history.contains(&pc) {
             return Err(acc);
         }
