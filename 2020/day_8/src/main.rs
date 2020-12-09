@@ -3,6 +3,16 @@ mod vm;
 use crate::vm::{VM, Ins};
 use log::*;
 
+use std::io::{stdout, Write};
+use crossterm::{
+    cursor::{MoveTo, Hide},
+    execute,
+    style::{style, Color, PrintStyledContent},
+    terminal::{Clear, ClearType},
+};
+
+use std::{thread, time};
+
 fn main() {
     env_logger::init();
 
@@ -25,8 +35,6 @@ fn main() {
     })
     .collect();
 
-    let part1 = loop_detect(VM::new(instructions.clone()));
-
     // brute force, just run the machine with each Nop or Jmp swapped
     let mut replace_positions = vec![];
     for (i, val) in instructions.iter().enumerate() {
@@ -37,23 +45,31 @@ fn main() {
     }
     let replace_positions = replace_positions;
 
-    let part2: Vec<i32> = replace_positions.iter().flat_map(|replace_pos| {
+    for replace_pos in replace_positions {
         let mut instructions = instructions.clone();
-        match instructions[*replace_pos] {
-            (Ins::Nop, a) => instructions[*replace_pos] = (Ins::Jmp, a),
-            (Ins::Jmp, a) => instructions[*replace_pos] = (Ins::Nop, a),
+        match instructions[replace_pos] {
+            (Ins::Nop, a) => instructions[replace_pos] = (Ins::Jmp, a),
+            (Ins::Jmp, a) => instructions[replace_pos] = (Ins::Nop, a),
             _ => unreachable!()
         }
 
+        thread::sleep(time::Duration::from_millis(50));
+
         let vm = VM::new(instructions);
 
-        match loop_detect(vm) {
-            Ok(result) => vec![result],
-            Err(_) => vec![]
-        }
-    }).collect();
+        execute!(
+            stdout(),
+            Clear(ClearType::All),
+            Hide
+        ).unwrap();
 
-    println!("{:?}, {:?}", part1, part2);
+        draw_blob(replace_pos, Color::Green);
+
+        if let Ok(result) = loop_detect(vm) {
+            display_result(result);
+            break;
+        }
+    };
 }
 
 // loop, return Result of last acc value if code exits,
@@ -66,12 +82,36 @@ fn loop_detect(mut vm: VM) -> Result<i32, i32> {
         vm.step();
         let pc = vm.pc();
   
-        if instruction_history.contains(&pc) {
+        thread::sleep(time::Duration::from_millis(1));
+
+        draw_blob(pc, Color::Yellow);
+
+        if let Some(pos) = instruction_history.iter().position(|&x| x == pc) {
+            for pc in instruction_history.iter().skip(pos) {
+                draw_blob(*pc, Color::Red);
+            }
             return Err(acc);
         }
+
         instruction_history.push(pc);
         debug!("{:?}", instruction_history);
     }
 
     Ok(vm.acc())
+}
+
+fn draw_blob(pc: usize, colour: Color) -> () {
+    execute!(
+        stdout(),
+        MoveTo((pc as u16) % 64, (pc / 64) as u16),
+        PrintStyledContent(style('▓').with(colour))
+    ).unwrap();
+}
+
+fn display_result(acc: i32) -> () {
+    execute!(
+        stdout(),
+        MoveTo(0,10),
+        PrintStyledContent(style(acc).with(Color::Green))
+    ).unwrap();
 }
