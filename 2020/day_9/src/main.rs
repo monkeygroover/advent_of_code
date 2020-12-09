@@ -17,4 +17,16 @@ fn main() {
             break;
         }
     }
+
+    for window_size in 2..data.len() {
+        for window in data.windows(window_size) {
+            let window: Vec<i64> = window.to_vec();
+            let sum: i64 = window.iter().sum();
+            if sum == 530627549 {
+                let part2 = window.iter().min().unwrap() + window.iter().max().unwrap();
+                println!("{}", part2);
+            }
+        }
+    }
+
 }
