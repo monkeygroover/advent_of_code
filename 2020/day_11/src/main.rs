@@ -1,3 +1,5 @@
+use grid::*;
+
 use std::io::{stdout, Write};
 use crossterm::{
     cursor::{MoveTo, Hide},
@@ -7,7 +9,7 @@ use crossterm::{
 };
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum Grid {
+pub enum Tile {
     Floor,
     Empty,
     Occupied
@@ -16,105 +18,103 @@ pub enum Grid {
 use std::{thread, time};
 
 fn main() {
-    execute!(
-        stdout(),
-        Clear(ClearType::All),
-        Hide
-    ).unwrap();
+    execute!(stdout(), Clear(ClearType::All), Hide).unwrap();
 
-    let stride = include_str!("input.txt").trim().lines().nth(0).map(|line| line.len()).unwrap() as isize;
+    let lines = include_str!("input.txt").trim().lines();
+    let stride = lines.clone().nth(0).map(|line| line.len()).unwrap();
 
-    let grid: Vec<Grid> = include_str!("input.txt").trim().lines()
+    let tiles: Vec<Tile> = lines
     .flat_map(|line| {
         line.chars().map( |ch|
             match ch {
-                '.' => Grid::Floor,
-                'L' => Grid::Empty,
-                '#' => Grid::Occupied,
+                '.' => Tile::Floor,
+                'L' => Tile::Empty,
+                '#' => Tile::Occupied,
                 _ => unreachable!()
             })
     }).collect();
 
-    let mut current_grid = grid;
+    let initial_grid = Grid::from_vec(tiles, stride);
+    let height = initial_grid.rows();
+
+    let mut current_grid = initial_grid;
     loop {
-        let new_grid = step(&current_grid, stride);
-        draw_grid(&&current_grid, &new_grid, stride);
-        if new_grid == current_grid {break};
+        draw_grid(&current_grid);
+        let new_grid = step(&current_grid);
+        if new_grid.flatten() == current_grid.flatten() {break};
         current_grid = new_grid;
-        thread::sleep(time::Duration::from_millis(100));
+        thread::sleep(time::Duration::from_millis(50));
     }
     
-    let part_1 = current_grid.iter().filter(|&tile| *tile == Grid::Occupied).count();
+    let part_2 = current_grid.iter().filter(|&tile| *tile == Tile::Occupied).count();
 
-    display_result(part_1);
+    display_result(part_2, height);
 }
 
-fn step(input: &Vec<Grid>, stride: isize) -> Vec<Grid> {
-    let mut new_grid = Vec::with_capacity(input.len());
+fn step(input_grid: &Grid<Tile>) -> Grid<Tile> {
+    let mut new_grid = input_grid.clone();
 
-    for (i, g) in input.iter().enumerate() {
-        let adj_count = count_adjacent_occupied(i, input, stride);
-        let new_tile = match g {
-            Grid::Floor => Grid::Floor,
-            Grid::Empty => if adj_count == 0 { Grid::Occupied } else { Grid::Empty },
-            Grid::Occupied => if adj_count >= 4 { Grid::Empty } else { Grid::Occupied }
-        };
-        new_grid.push(new_tile);
+    for y in 0..input_grid.rows() {
+        for x in 0..input_grid.cols() {
+            let adj_count = count_visible_occupied((x,y), &input_grid);
+            let new_tile = match input_grid[y][x] {
+                Tile::Floor => Tile::Floor,
+                Tile::Empty => if adj_count == 0 { Tile::Occupied } else { Tile::Empty },
+                Tile::Occupied => if adj_count >= 5 { Tile::Empty } else { Tile::Occupied }
+            };
+            new_grid[y][x] = new_tile;
+        }
     }
 
     new_grid
 }
 
-fn count_adjacent_occupied(pos: usize, input: &Vec<Grid>, stride: isize) -> usize {
-    //check the 8 positions 
-    let mut offsets: Vec<isize> = vec![0-stride, stride]; //above and below
-    if pos % stride as usize != 0 { //not left column
-        offsets.append(&mut vec![0 - (stride + 1), -1, stride - 1]);
-    }
-
-    if pos % stride as usize != (stride - 1) as usize { //not right column
-        offsets.append(&mut vec![1 - stride, 1, stride + 1]);
-    }
-    let offsets = offsets;
-
-    offsets.iter().fold(0, |acc, offset| {
-        let offset_pos = pos as isize + offset;
-
-        if offset_pos < 0 || offset_pos >= input.len() as isize { 
-            acc 
-        } else {
-            let offset_tile = input[offset_pos as usize];
-            if offset_tile == Grid::Occupied {
-                acc + 1
-            } else {
-                acc
-            }
-        }
+fn count_visible_occupied(pos: (usize, usize), grid: &Grid<Tile>) -> usize {
+    let directions = vec![(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)];
+    directions.iter().fold(0, |acc, &direction| { 
+        if occupied_seat_visible(pos, direction, &grid) { acc + 1 } else { acc }
     })
 }
 
-fn draw_grid(previous_grid: &Vec<Grid>, current_grid: &Vec<Grid>, stride: isize) -> () {
-    for (i, (curr_g, prev_g)) in current_grid.iter().zip(previous_grid).enumerate() {
-        if curr_g != prev_g {
-            let (colour, ch) = match curr_g {
-                    Grid::Floor => (Color::Grey, ' '),
-                    Grid::Empty => (Color::Green, '░'),
-                    Grid::Occupied => (Color::Red, '▓')
-                };
+fn occupied_seat_visible(init_pos: (usize, usize), direction: (isize, isize), grid: &Grid<Tile>) -> bool {
+    let width = grid.cols();
+    let height = grid.rows();
+    let (mut x, mut y) = init_pos;
+    let (dx, dy) = direction;
 
-            execute!(
-                stdout(),
-                MoveTo((i as u16) % stride as u16, (i / stride as usize) as u16),
-                PrintStyledContent(style(ch).with(colour))
-            ).unwrap();
+    loop {
+        // first check if we exit the grid
+        if x == 0 && dx == -1 { return false }    
+        if x == width - 1 && dx == 1 { return false }
+        if y == 0 && dy == -1 { return false }    
+        if y == height - 1 && dy == 1 { return false }
+
+        x = (x as isize + dx) as usize;
+        y = (y as isize + dy) as usize;
+
+        match grid[y][x] {
+            Tile::Occupied => return true,
+            Tile::Empty => return false,
+            Tile::Floor => ()
         }
     }
 }
 
-fn display_result(acc: usize) -> () {
-    execute!(
-        stdout(),
-        MoveTo(0,100),
-        PrintStyledContent(style(acc).with(Color::Cyan))
-    ).unwrap();
+fn draw_grid(grid: &Grid<Tile>) -> () {
+    for y in 0..grid.rows() {
+        for x in 0..grid.cols() {
+            let tile: Tile = grid[y][x];
+            let (colour, ch) = match tile {
+                    Tile::Floor => (Color::Grey, '.'),
+                    Tile::Empty => (Color::Green, 'L'),
+                    Tile::Occupied => (Color::Red, '#')
+                };
+
+            execute!(stdout(), MoveTo(x as u16, y as u16), PrintStyledContent(style(ch).with(colour))).unwrap();
+        }
+    }
+}
+
+fn display_result(acc: usize, height: usize) -> () {
+    execute!(stdout(), MoveTo(0, height as u16), PrintStyledContent(style(acc).with(Color::Cyan))).unwrap();
 }
