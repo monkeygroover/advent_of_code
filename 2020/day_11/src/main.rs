@@ -13,6 +13,8 @@ pub enum Grid {
     Occupied
 }
 
+use std::{thread, time};
+
 fn main() {
     execute!(
         stdout(),
@@ -39,6 +41,7 @@ fn main() {
         draw_grid(&&current_grid, &new_grid, stride);
         if new_grid == current_grid {break};
         current_grid = new_grid;
+        thread::sleep(time::Duration::from_millis(100));
     }
     
     let part_1 = current_grid.iter().filter(|&tile| *tile == Grid::Occupied).count();
@@ -94,9 +97,9 @@ fn draw_grid(previous_grid: &Vec<Grid>, current_grid: &Vec<Grid>, stride: isize)
     for (i, (curr_g, prev_g)) in current_grid.iter().zip(previous_grid).enumerate() {
         if curr_g != prev_g {
             let (colour, ch) = match curr_g {
-                    Grid::Floor => (Color::Grey, '.'),
-                    Grid::Empty => (Color::Green, 'L'),
-                    Grid::Occupied => (Color::Red, '#')
+                    Grid::Floor => (Color::Grey, ' '),
+                    Grid::Empty => (Color::Green, '░'),
+                    Grid::Occupied => (Color::Red, '▓')
                 };
 
             execute!(
