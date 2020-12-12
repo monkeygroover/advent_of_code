@@ -43,7 +43,7 @@ fn main() {
         let new_grid = step(&current_grid);
         if new_grid.flatten() == current_grid.flatten() {break};
         current_grid = new_grid;
-        thread::sleep(time::Duration::from_millis(50));
+        thread::sleep(time::Duration::from_millis(5));
     }
     
     let part_2 = current_grid.iter().filter(|&tile| *tile == Tile::Occupied).count();
