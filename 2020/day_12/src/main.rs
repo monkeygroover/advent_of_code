@@ -5,70 +5,61 @@ use regex::Regex;
 struct Ship {
     x: i32,
     y: i32,
-    dx: i32,
-    dy: i32
+    wp_x: i32, // relative to ship
+    wp_y: i32
+}
+
+#[derive(Debug)]
+enum Rotate {
+    Ninety,
+    OneEighty,
+    TwoSeventy
 }
 
 impl Ship {
     fn new() -> Ship {
-        Ship{x: 0, y: 0, dx: 1, dy: 0}
+        Ship{x: 0, y: 0, wp_x: 10, wp_y: 1}
     }
 
     fn north(&self, n: i32) -> Ship {
         debug!("north {}", n);
-        Ship{y: self.y + n, ..*self}
+        Ship{wp_y: self.wp_y + n, ..*self}
     }
 
     fn south(&self, s: i32) -> Ship {
         debug!("south {}", s);
-        Ship{y: self.y - s, ..*self}
+        Ship{wp_y: self.wp_y - s, ..*self}
     }
 
     fn east(&self, e: i32) -> Ship {
         debug!("east {}", e);
-        Ship{x: self.x + e, ..*self}
+        Ship{wp_x: self.wp_x + e, ..*self}
     }
 
     fn west(&self, w: i32) -> Ship {
         debug!("west {}", w);
-        Ship{x: self.x - w, ..*self}
+        Ship{wp_x: self.wp_x - w, ..*self}
     }
 
-    fn left(&self, n: usize) -> Ship {
-        debug!("left {}", n);
-        (0..n).fold(*self, |ship, _| ship.do_left())
-    }
+    fn rotate(&self, r: Rotate) -> Ship {
+        debug!("rotate {:?}", r);
 
-    fn do_left(&self) -> Ship {
-        let (new_dx, new_dy) = match (self.dx, self.dy) {
-            (1,0) => (0,1),
-            (0,1) => (-1, 0),
-            (-1, 0) => (0, -1),
-            (0, -1) => (1, 0),
-            _ => unreachable!()
+        let (rot_x, rot_y) = match r {
+            Rotate::Ninety => (0 - self.wp_y , self.wp_x),
+            Rotate::OneEighty => (0 - self.wp_x, 0 - self.wp_y ),
+            Rotate::TwoSeventy => (self.wp_y , 0 - self.wp_x)
         };
-        Ship{dx: new_dx, dy: new_dy, ..*self}
+
+        debug!("dx {}, dy {} : rot_x {}, rot_y {}", self.wp_x, self.wp_y, rot_x, rot_y);
+
+        Ship{wp_x: rot_x, 
+             wp_y: rot_y,
+             ..*self}
     }
 
-    fn right(&self, n: usize) -> Ship {
-        debug!("right {}", n);
-        (0..n).fold(*self, |ship, _| ship.do_right())
-    }
-
-    fn do_right(&self) -> Ship {
-        let (new_dx, new_dy) = match (self.dx, self.dy) {
-            (1,0) => (0,-1),
-            (0,-1) => (-1, 0),
-            (-1, 0) => (0, 1),
-            (0, 1) => (1, 0),
-            _ => unreachable!()
-        };
-        Ship{dx: new_dx, dy: new_dy, ..*self}
-    }
-
-    fn forward(&self, f: i32) -> Ship {
-        debug!("forward {}", f);
-        Ship{x: self.x + self.dx * f , y: self.y + self.dy * f, ..*self}
+    fn forward(&self, n: i32) -> Ship {
+        debug!("forward {}", n);
+        (0..n).fold(*self, |ship, _| Ship{x: ship.x + ship.wp_x, y: ship.y + ship.wp_y, ..ship})
     }
 
     fn manhattan(&self) -> i32 {
@@ -81,8 +72,8 @@ enum Command {
     South(i32),
     East(i32),
     West(i32),
-    Left(usize),
-    Right(usize),
+    Left(i32),
+    Right(i32),
     Forward(i32)
 }
 
@@ -102,8 +93,8 @@ fn main() {
             "S" => Command::South(val),
             "E" => Command::East(val),
             "W" => Command::West(val),
-            "L" => Command::Left((val/90) as usize),
-            "R" => Command::Right((val/90) as usize),
+            "L" => Command::Left(val),
+            "R" => Command::Right(val),
             "F" => Command::Forward(val),
             _   => panic!("bad direction")
         }
@@ -116,8 +107,22 @@ fn main() {
             Command::South(s) => ship.south(s),
             Command::East(e)  => ship.east(e),
             Command::West(w)  => ship.west(w),
-            Command::Left(l)  => ship.left(l),
-            Command::Right(r) => ship.right(r),
+            Command::Left(l)  => {
+                match l {
+                    90 => ship.rotate(Rotate::Ninety),
+                    180 => ship.rotate(Rotate::OneEighty),
+                    270 => ship.rotate(Rotate::TwoSeventy),
+                    l => panic!("bad rotation l {}", l)
+                }
+            },
+            Command::Right(r) => {
+                match r {
+                    90 => ship.rotate(Rotate::TwoSeventy),
+                    180 => ship.rotate(Rotate::OneEighty),
+                    270 => ship.rotate(Rotate::Ninety),
+                    r => panic!("bad rotation r {}", r)
+                }
+            },
             Command::Forward(f) => ship.forward(f)
         }
     });
