@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use regex::Regex;
 
 fn main() {
-    let bags: HashMap<String, Vec<(u32, String)> > = include_str!("input.txt")
+    let bag_map: HashMap<String, Vec<(u32, String)> > = include_str!("input.txt")
     .trim()
     .lines()
     .map(|line| {
@@ -27,32 +27,25 @@ fn main() {
         (bag_name, contains)
     }).collect();
 
-    let bags_that_can_contain_gold = 
-        bags.iter().filter(|&(bag_name, _bag_contents)| {
-                bag_contains_bag(&bags, String::from(bag_name), "shiny gold".to_string() )
-            }
-        );
+    let bags_that_can_contain_gold =
+        bag_map.iter()
+        .filter(|&(bag_name, _)| { bag_contains_bag(&bag_map, bag_name, &String::from("shiny gold"))});
         
-    let bags_inside_gold = count_bags(&bags, "shiny gold".to_string());
+    let bags_inside_gold = count_bags(&bag_map, &String::from("shiny gold"));
     
     println!("{}, {}", bags_that_can_contain_gold.count() - 1, bags_inside_gold - 1);
 }
 
-fn bag_contains_bag(bags: &HashMap<String, Vec<(u32, String)>>, bag_name: String, bag_to_check: String) -> bool {
-    if bag_name == bag_to_check {
+fn bag_contains_bag(bag_map: &HashMap<String, Vec<(u32, String)>>, bag_name: &String, bag_to_check: &String) -> bool {
+    if *bag_name == *bag_to_check {
         true
     } else {
-        let contained_bags = bags.get(&bag_name).unwrap();
-
-        if contained_bags.len() == 0 {
-            false
-        } else {
-             contained_bags.iter().any(|(_, i)| bag_contains_bag(&bags, i.clone(), bag_to_check.clone()))
-        }
+        let contained_bags = bag_map.get(bag_name).unwrap();
+        contained_bags.iter().any(|(_, inner)| bag_contains_bag(&bag_map, inner, bag_to_check))
     }
 }
 
-fn count_bags(bags: &HashMap<String, Vec<(u32, String)>>, bag_name: String) -> u32 {
-    let inner_bags = bags.get(&bag_name).unwrap();
-    1 + inner_bags.iter().fold(0, |acc, (count, name)| acc + count * count_bags(bags, String::from(name)))
+fn count_bags(bags: &HashMap<String, Vec<(u32, String)>>, bag_name: &String) -> u32 {
+    let inner_bags = bags.get(bag_name).unwrap();
+    1 + inner_bags.iter().fold(0, |acc, (count, inner_bag_name)| acc + count * count_bags(bags, inner_bag_name))
 }
